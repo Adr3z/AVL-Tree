@@ -28,10 +28,20 @@ typedef struct node{
     int height;
 }node_t;
 
+typedef struct queue_node{
+    node_t *avl_node;
+    struct queue_node *next;
+}queue_node_t;
+
+typedef struct queue{
+    queue_node_t *front;
+    queue_node_t *rear;
+}queue_t;
+
 void insert_node( node_t **root);
 void erase_node();
 void print_height(node_t *root);
-void print_by_level();
+void print_by_level(node_t *root);
 node_t* create_node( int key);
 int height(node_t *node);
 int balance_factor( node_t *node);
@@ -39,6 +49,9 @@ void right_rotation(node_t **root);
 void left_rotation(node_t **root);
 void aux_insert(node_t **root, int value);
 void free_tree(node_t* root);
+
+queue_t* createQueue();
+void enqueue(queue_t* queue, node_t* treeNode);
 
 int main(void)  {
     // IMPORTANT: Comment the next line before submitting to omegaUp
@@ -62,7 +75,7 @@ int main(void)  {
                 print_height(root);
             break;
             case 'P':      
-                print_by_level();
+                print_by_level(root);
             break;
         }
     }
@@ -100,12 +113,16 @@ void print_height(node_t *root)
     printf("%d\n", root->height);
 }
 
-void print_by_level()
+void print_by_level(node_t *root)
 {
 #ifdef DEBUG
-    printf("Printing the tree's content level by level\n");
 #endif
     // TODO: print the tree's content level by level
+    if(root != NULL){
+        printf("%d ", root->key);
+        print_by_level(root->left);
+        print_by_level(root->right);
+    }
 }
 
 node_t* create_node( int key)

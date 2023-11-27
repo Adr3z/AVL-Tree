@@ -30,7 +30,7 @@ typedef struct node{
 
 void insert_node( node_t **root);
 void erase_node();
-void print_height();
+void print_height(node_t *root);
 void print_by_level();
 node_t* create_node( int key);
 int height(node_t *node);
@@ -59,7 +59,7 @@ int main(void)  {
                 erase_node();
             break;
             case 'A':    
-                print_height();
+                print_height(root);
             break;
             case 'P':      
                 print_by_level();
@@ -91,12 +91,13 @@ void erase_node()
     // TODO: erase node with the specified value
 }
 
-void print_height()
+void print_height(node_t *root)
 {
 #ifdef DEBUG
     printf("Printing the tree's height\n");
 #endif
     // TODO: print the tree's height
+    printf("%d\n", root->height);
 }
 
 void print_by_level()
@@ -157,6 +158,7 @@ void aux_insert(node_t **root, int value)
         right_rotation(root);
     }
 }
+
 int height(node_t *node)
 {
     if(node == NULL){

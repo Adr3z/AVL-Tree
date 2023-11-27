@@ -48,6 +48,8 @@ int balance_factor( node_t *node);
 void right_rotation(node_t **root);
 void left_rotation(node_t **root);
 void aux_insert(node_t **root, int value);
+void aux_erase(node_t **root, int value);
+node_t *min(node_t *node);
 void free_tree(node_t* root);
 
 queue_t* createQueue();
@@ -90,7 +92,7 @@ void insert_node( node_t **root)
     int value;
     scanf("%d", &value);
 #ifdef DEBUG
-    printf("Inserting node with value %d\n", value);
+    //printf("Inserting node with value %d\n", value);
 #endif
     // TODO: insert node with the specified value
     aux_insert(&(*root), value);
@@ -101,17 +103,16 @@ void erase_node( node_t **root)
     int value;
     scanf("%d", &value);
 #ifdef DEBUG
-    printf("Erasing node with value %d\n", value);
+    //printf("Erasing node with value %d\n", value);
 #endif
-    // TODO: erase node with the specified value
+    aux_erase(&(*root), value);
 }
 
 void print_height(node_t *root)
 {
 #ifdef DEBUG
-    printf("Printing the tree's height\n");
+    //printf("Printing the tree's height\n");
 #endif
-    // TODO: print the tree's height
     printf("%d\n", root->height);
 }
 
@@ -119,7 +120,6 @@ void print_by_level(node_t *root)
 {
 #ifdef DEBUG
 #endif
-    // TODO: print the tree's content level by level
     if(root == NULL){
         printf("\n");
         return;
@@ -200,6 +200,78 @@ void aux_insert(node_t **root, int value)
         left_rotation(&((*root)->left));
         right_rotation(root);
     }
+}
+
+void aux_erase(node_t **root, int value)
+{
+    if( *root == NULL){
+        return;
+    }
+
+    if(value < (*root)->key){
+        aux_erase(&((*root)->left), value);
+    } else if (value > (*root)->key) {
+        aux_erase(&((*root)->right), value);
+    } else {
+        if ((*root)->left == NULL || (*root)->right == NULL) {
+            node_t* tmp = (*root)->left ? (*root)->left : (*root)->right;
+
+            // Caso 1: El nodo tiene 0 hijos
+            if (tmp == NULL) {
+                tmp = *root;
+                *root = NULL;
+            } else {
+                // Caso 2: El nodo tiene 1 hijo
+                *(*root) = *tmp; 
+            }
+
+            free(tmp);
+        } else {
+            // Caso 3: El nodo tiene 2 hijos
+            node_t* sucesor = min((*root)->right);
+
+            (*root)->key = sucesor->key;
+
+            aux_erase(&((*root)->right), sucesor->key);
+        }
+    }
+
+    if (*root == NULL) {
+        return;
+    }
+
+    //Actualizar la altura del nodo actual
+    (*root)->height = height(*root);
+
+    //Calcular el factor de equilibrio
+    int fe = balance_factor(*root);
+
+    //Realizar rotaciones 
+    if (fe > 1 && value > (*root)->right->key) {
+        left_rotation(root);
+    }
+
+    if (fe < -1 && value < (*root)->left->key) {
+        right_rotation(root);
+    }
+
+    if (fe > 1 && value < (*root)->right->key) {
+        right_rotation(&((*root)->right));
+        left_rotation(root);
+    }
+
+    if (fe < -1 && value > (*root)->left->key) {
+        left_rotation(&((*root)->left));
+        right_rotation(root);
+    }
+}
+
+node_t *min(node_t *node)
+{
+     while (node->left != NULL) {
+        node = node->left;
+    }
+    return node;
 }
 
 int height(node_t *node)

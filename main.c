@@ -39,7 +39,7 @@ typedef struct queue{
 }queue_t;
 
 void insert_node( node_t **root);
-void erase_node();
+void erase_node( node_t **root);
 void print_height(node_t *root);
 void print_by_level(node_t *root);
 node_t* create_node( int key);
@@ -52,6 +52,8 @@ void free_tree(node_t* root);
 
 queue_t* createQueue();
 void enqueue(queue_t* queue, node_t* treeNode);
+queue_node_t* createQueueNode(node_t* treeNode);
+int is_empty(queue_t *queue);
 
 int main(void)  {
     // IMPORTANT: Comment the next line before submitting to omegaUp
@@ -69,7 +71,7 @@ int main(void)  {
                 insert_node(&root);
             break;
             case 'E':   
-                erase_node();
+                erase_node(&root);
             break;
             case 'A':    
                 print_height(root);
@@ -94,7 +96,7 @@ void insert_node( node_t **root)
     aux_insert(&(*root), value);
 }
 
-void erase_node()
+void erase_node( node_t **root)
 {
     int value;
     scanf("%d", &value);
@@ -118,11 +120,35 @@ void print_by_level(node_t *root)
 #ifdef DEBUG
 #endif
     // TODO: print the tree's content level by level
-    if(root != NULL){
-        printf("%d ", root->key);
-        print_by_level(root->left);
-        print_by_level(root->right);
+    if(root == NULL){
+        printf("\n");
+        return;
     }
+    queue_t *queue = createQueue();
+    enqueue(queue, root);
+
+    while(is_empty(queue) == 0){
+        int actual_level = queue->front->avl_node->key;
+
+        while(is_empty(queue) == 0 && queue->front->avl_node->key == actual_level){
+            node_t *current = queue->front->avl_node;
+            printf("%d ", current->key);
+
+            if(current->left != NULL){
+                enqueue(queue, current->left);
+            }
+
+            if(current->right != NULL){
+                enqueue(queue, current->right);
+            }
+
+            queue_node_t* tmp = queue->front;
+            queue->front = queue->front->next;
+            free(tmp);
+        }
+    }
+    printf("\n");
+    free(queue);
 }
 
 node_t* create_node( int key)
@@ -230,4 +256,39 @@ void free_tree(node_t* root)
         free_tree(root->right);
         free(root);
     }
+}
+
+queue_t* createQueue()
+{
+    queue_t *queue = (queue_t*)malloc(sizeof(queue_t));
+    queue->front = queue->rear = NULL;
+    return queue;
+}
+
+int is_empty(queue_t *queue)
+{
+    if(queue->front == NULL){
+        return 1;
+    }
+    return 0;
+}
+
+queue_node_t* createQueueNode(node_t* treeNode)
+{
+    queue_node_t *node = (queue_node_t*)malloc(sizeof(queue_node_t));
+    node->avl_node = treeNode;
+    node->next = NULL;
+    return node;
+}
+
+void enqueue(queue_t* queue, node_t* treeNode)
+{
+    queue_node_t *new = createQueueNode(treeNode);
+
+    if(is_empty(queue) == 1){
+        queue->front = queue->rear = new;
+        return;
+    }
+    queue->rear->next = new;
+    queue->rear = new;
 }

@@ -49,6 +49,7 @@ void right_rotation(node_t **root);
 void left_rotation(node_t **root);
 void aux_insert(node_t **root, int value);
 void aux_erase(node_t **root, int value);
+void make_balance( node_t **root);
 node_t *min(node_t *node);
 void free_tree(node_t* root);
 
@@ -175,31 +176,7 @@ void aux_insert(node_t **root, int value)
         return; // No permitir claves duplicadas
     }
 
-    // Actualizar la altura del nodo actual
-    (*root)->height = height(*root);
-
-    // Calcular el factor de equilibrio del nodo actual
-    int fe = balance_factor(*root);
-
-    // Realizar rotaciones según los casos de desequilibrio
-    // (izquierda-izquierda, izquierda-derecha, derecha-derecha, derecha-izquierda)
-    if (fe > 1 && value > (*root)->right->key) {
-        left_rotation(root);
-    }
-
-    if (fe < -1 && value < (*root)->left->key) {
-        right_rotation(root);
-    }
-
-    if (fe > 1 && value < (*root)->right->key) {
-        right_rotation(&((*root)->right));
-        left_rotation(root);
-    }
-
-    if (fe < -1 && value > (*root)->left->key) {
-        left_rotation(&((*root)->left));
-        right_rotation(root);
-    }
+   make_balance(root);
 }
 
 void aux_erase(node_t **root, int value)
@@ -240,6 +217,11 @@ void aux_erase(node_t **root, int value)
         return;
     }
 
+    make_balance(root);
+}
+
+void make_balance( node_t **root)
+{
     //Actualizar la altura del nodo actual
     (*root)->height = height(*root);
 
@@ -247,21 +229,19 @@ void aux_erase(node_t **root, int value)
     int fe = balance_factor(*root);
 
     //Realizar rotaciones 
-    if (fe > 1 && value > (*root)->right->key) {
+        if (fe > 1) {
+        if (balance_factor((*root)->right) < 0) {
+            // Caso de rotación derecha-izquierda
+            right_rotation(&((*root)->right));
+        }
+        // Caso de rotación izquierda
         left_rotation(root);
-    }
-
-    if (fe < -1 && value < (*root)->left->key) {
-        right_rotation(root);
-    }
-
-    if (fe > 1 && value < (*root)->right->key) {
-        right_rotation(&((*root)->right));
-        left_rotation(root);
-    }
-
-    if (fe < -1 && value > (*root)->left->key) {
-        left_rotation(&((*root)->left));
+    } else if (fe < -1) {
+        if (balance_factor((*root)->left) > 0) {
+            // Caso de rotación izquierda-derecha
+            left_rotation(&((*root)->left));
+        }
+        // Caso de rotación derecha
         right_rotation(root);
     }
 }

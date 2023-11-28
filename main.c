@@ -47,8 +47,7 @@ void print_by_level(node_t *root);
 
 //avl functions
 node_t* create_node( int key);
-int height(node_t *node);
-void update_height(node_t *node);
+int height(node_t *node, int counter);
 int balance_factor( node_t *node);
 void right_rotation(node_t **root);
 void left_rotation(node_t **root);
@@ -185,7 +184,7 @@ void aux_insert(node_t **root, int value)
     } else {
         return; // No permitir claves duplicadas
     }
-    update_height(*root);
+    (*root)->height = height(*root, -1);
     make_balance(root);
 }
 
@@ -195,30 +194,25 @@ void aux_erase(node_t **root, int value)
         return;
     }
 
-    if(value < (*root)->key){
-        aux_erase(&((*root)->left), value);
-    } else if (value > (*root)->key) {
-        aux_erase(&((*root)->right), value);
-    } else {
-        if ((*root)->left == NULL || (*root)->right == NULL) {
-            node_t* tmp = (*root)->left ? (*root)->left : (*root)->right;
-
-            // Caso 1: El nodo tiene 0 hijos
-            if (tmp == NULL) {
-                tmp = *root;
-                *root = NULL;
-            } else {
-                // Caso 2: El nodo tiene 1 hijo
-                *(*root) = *tmp; 
-            }
-
-            free(tmp);
+    if((*root)->key == value) {
+        if ((*root)->left == NULL && (*root)->right == NULL) {
+            //Caso 1: El nodo es una hoja
+            free(*root);
+            *root = NULL;
+        } else if ((*root)->left == NULL) {
+            //Caso 2: hijo derecho
+            node_t *aux = *root;
+            *root = (*root)->right;
+            free(aux);
+        } else if ((*root)->right == NULL) {
+            //Caso 2: hijo izquierdo
+            node_t *aux = *root;
+            *root = (*root)->left;
+            free(aux);
         } else {
             // Caso 3: El nodo tiene 2 hijos
             node_t* sucesor = min((*root)->right);
-
             (*root)->key = sucesor->key;
-
             aux_erase(&((*root)->right), sucesor->key);
         }
     }
@@ -226,7 +220,14 @@ void aux_erase(node_t **root, int value)
     if (*root == NULL) {
         return;
     }
-    update_height(*root);
+
+    if(value < (*root)->key){
+        aux_erase(&((*root)->left), value);
+    } else if (value > (*root)->key) {
+        aux_erase(&((*root)->right), value);
+    }
+    
+    (*root)->height = height(*root, -1);
     make_balance(root);
 }
 
@@ -261,23 +262,17 @@ node_t *min(node_t *node)
     return node;
 }
 
-int height(node_t *node)
+int height(node_t *node, int counter)
 {
-    if(node == NULL){
-        return -1;
+   if (node == NULL) {
+        return counter;
     }
-    int left = height(node->left);
-    int right = height(node->right);
-    return 1 + (left > right ? left : right);
-}
 
-void update_height(node_t *node) 
-{
-    if (node != NULL) {
-        int left_height = (node->left != NULL) ? node->left->height : -1;
-        int right_height = (node->right != NULL) ? node->right->height : -1;
-        node->height = 1 + ((left_height > right_height) ? left_height : right_height);
-    }
+
+    int left_calls = height(node->left, counter + 1);
+    int right_calls = height(node->right, counter + 1);
+
+    return (left_calls > right_calls) ? left_calls : right_calls;
 }
 
 int balance_factor( node_t *node)
@@ -295,8 +290,8 @@ void right_rotation(node_t **root)
     y->left = t2;
     *root = x;
 
-    x->height = height(x);
-    y->height = height(y);
+    x->height = height(x, -1);
+    y->height = height(y, -1);
     x->fe = balance_factor(x);
     y->fe = balance_factor(y);
 }
@@ -311,8 +306,8 @@ void left_rotation(node_t **root)
     x->right = t2;
     *root = y;
 
-    y->height = height(y);
-    x->height = height(x);
+    y->height = height(y, -1);
+    x->height = height(x, -1);
     y->fe = balance_factor(y);
     x->fe = balance_factor(x);
 }

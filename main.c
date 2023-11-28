@@ -47,7 +47,8 @@ void print_by_level(node_t *root);
 
 //avl functions
 node_t* create_node( int key);
-int height(node_t *node, int counter);
+int height(node_t *node);
+void update_height(node_t *node);
 int balance_factor( node_t *node);
 void right_rotation(node_t **root);
 void left_rotation(node_t **root);
@@ -184,7 +185,7 @@ void aux_insert(node_t **root, int value)
     } else {
         return; // No permitir claves duplicadas
     }
-    (*root)->height = height(*root, -1);
+    update_height(*root);
     make_balance(root);
 }
 
@@ -227,7 +228,7 @@ void aux_erase(node_t **root, int value)
         aux_erase(&((*root)->right), value);
     }
     
-    (*root)->height = height(*root, -1);
+    update_height(*root);
     make_balance(root);
 }
 
@@ -262,17 +263,23 @@ node_t *min(node_t *node)
     return node;
 }
 
-int height(node_t *node, int counter)
+int height(node_t *node)
 {
-   if (node == NULL) {
-        return counter;
+    if(node == NULL){
+        return -1;
     }
+    int left = height(node->left);
+    int right = height(node->right);
+    return 1 + (left > right ? left : right);
+}
 
-
-    int left_calls = height(node->left, counter + 1);
-    int right_calls = height(node->right, counter + 1);
-
-    return (left_calls > right_calls) ? left_calls : right_calls;
+void update_height(node_t *node) 
+{
+    if (node != NULL) {
+        int left_height = (node->left != NULL) ? node->left->height : -1;
+        int right_height = (node->right != NULL) ? node->right->height : -1;
+        node->height = 1 + ((left_height > right_height) ? left_height : right_height);
+    }
 }
 
 int balance_factor( node_t *node)
@@ -290,8 +297,8 @@ void right_rotation(node_t **root)
     y->left = t2;
     *root = x;
 
-    x->height = height(x, -1);
-    y->height = height(y, -1);
+    x->height = height(x);
+    y->height = height(y);
     x->fe = balance_factor(x);
     y->fe = balance_factor(y);
 }
@@ -306,8 +313,8 @@ void left_rotation(node_t **root)
     x->right = t2;
     *root = y;
 
-    y->height = height(y, -1);
-    x->height = height(x, -1);
+    y->height = height(y);
+    x->height = height(x);
     y->fe = balance_factor(y);
     x->fe = balance_factor(x);
 }

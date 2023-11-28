@@ -9,16 +9,18 @@ Fecha de entrega: Martes 28 de noviembre de 2023
 
 Nombre del alumno: Lara López Fryda Renata
 
-Nombre de usuario en omegaUp: ________________________________
+Nombre de usuario en omegaUp: FrydaLara
 
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
+
 
 // IMPORTANT: Comment the next line before submitting to omegaUp
-#define DEBUG
+//#define DEBUG
 
 typedef struct node{
     int key;
@@ -30,6 +32,7 @@ typedef struct node{
 
 typedef struct queue_node{
     node_t *avl_node;
+    int level;
     struct queue_node *next;
 }queue_node_t;
 
@@ -44,6 +47,7 @@ void print_height(node_t *root);
 void print_by_level(node_t *root);
 node_t* create_node( int key);
 int height(node_t *node);
+void update_height(node_t *node);
 int balance_factor( node_t *node);
 void right_rotation(node_t **root);
 void left_rotation(node_t **root);
@@ -53,14 +57,15 @@ void make_balance( node_t **root);
 node_t *min(node_t *node);
 void free_tree(node_t* root);
 
-queue_t* createQueue();
-void enqueue(queue_t* queue, node_t* treeNode);
-queue_node_t* createQueueNode(node_t* treeNode);
+queue_t *createQueue();
+void enqueue(queue_t *queue, node_t *treeNode, int level);
+queue_node_t *dequeue(queue_t *queue);
 int is_empty(queue_t *queue);
+void print_by_level(node_t *root);
 
 int main(void)  {
     // IMPORTANT: Comment the next line before submitting to omegaUp
-    freopen("input.txt", "rt", stdin);
+    //freopen("input.txt", "rt", stdin);
     // freopen("output.txt", "rt", stdout);
 
     node_t *root = NULL;
@@ -92,9 +97,9 @@ void insert_node( node_t **root)
 {
     int value;
     scanf("%d", &value);
-#ifdef DEBUG
+//#ifdef DEBUG
     //printf("Inserting node with value %d\n", value);
-#endif
+//#endif
     // TODO: insert node with the specified value
     aux_insert(&(*root), value);
 }
@@ -103,62 +108,63 @@ void erase_node( node_t **root)
 {
     int value;
     scanf("%d", &value);
-#ifdef DEBUG
+//#ifdef DEBUG
     //printf("Erasing node with value %d\n", value);
-#endif
+//#endif
     aux_erase(&(*root), value);
 }
 
 void print_height(node_t *root)
 {
-#ifdef DEBUG
+//#ifdef DEBUG
     //printf("Printing the tree's height\n");
-#endif
-    printf("%d\n", root->height);
+//#endif
+    if (root == NULL) {
+        printf("\n");
+    } else {
+        printf("%d\n", root->height);
+    }
 }
 
 void print_by_level(node_t *root)
 {
-#ifdef DEBUG
-#endif
-    if(root == NULL){
+//#ifdef DEBUG
+//#endif
+  if (root == NULL) {
         printf("\n");
         return;
     }
+
     queue_t *queue = createQueue();
-    enqueue(queue, root);
+    enqueue(queue, root, 0);
 
-    while(is_empty(queue) == 0){
-        int actual_level = queue->front->avl_node->key;
+    int current_level = 0;
 
-        while(is_empty(queue) == 0 && queue->front->avl_node->key == actual_level){
-            node_t *current = queue->front->avl_node;
-            printf("%d ", current->key);
+    while (!is_empty(queue)) {
+        queue_node_t *current = dequeue(queue);
 
-            if(current->left != NULL){
-                enqueue(queue, current->left);
-            }
+        printf("%d ", current->avl_node->key);
 
-            if(current->right != NULL){
-                enqueue(queue, current->right);
-            }
+        if (current->avl_node->left != NULL) {
+            enqueue(queue, current->avl_node->left, current_level + 1);
+        }
 
-            queue_node_t* tmp = queue->front;
-            queue->front = queue->front->next;
-            free(tmp);
+        if (current->avl_node->right != NULL) {
+            enqueue(queue, current->avl_node->right, current_level + 1);
         }
     }
+
     printf("\n");
     free(queue);
 }
 
 node_t* create_node( int key)
 {
-    node_t *new = (node_t*)malloc(sizeof(node_t));
-    new->key = key;
-    new->left = new->right = NULL;
-    new->fe = new->height = 0;
-    return new;
+    node_t *new_node = (node_t*)malloc(sizeof(node_t));
+    new_node->key = key;
+    new_node->left = new_node->right = NULL;
+    new_node->fe = new_node->height = 0;
+    return new_node;
 }
 
 void aux_insert(node_t **root, int value)
@@ -175,8 +181,8 @@ void aux_insert(node_t **root, int value)
     } else {
         return; // No permitir claves duplicadas
     }
-
-   make_balance(root);
+    update_height(*root);
+    make_balance(root);
 }
 
 void aux_erase(node_t **root, int value)
@@ -216,15 +222,12 @@ void aux_erase(node_t **root, int value)
     if (*root == NULL) {
         return;
     }
-
+    update_height(*root);
     make_balance(root);
 }
 
 void make_balance( node_t **root)
 {
-    //Actualizar la altura del nodo actual
-    (*root)->height = height(*root);
-
     //Calcular el factor de equilibrio
     int fe = balance_factor(*root);
 
@@ -262,6 +265,15 @@ int height(node_t *node)
     int left = height(node->left);
     int right = height(node->right);
     return 1 + (left > right ? left : right);
+}
+
+void update_height(node_t *node) 
+{
+    if (node != NULL) {
+        int left_height = (node->left != NULL) ? node->left->height : -1;
+        int right_height = (node->right != NULL) ? node->right->height : -1;
+        node->height = 1 + ((left_height > right_height) ? left_height : right_height);
+    }
 }
 
 int balance_factor( node_t *node)
@@ -310,37 +322,52 @@ void free_tree(node_t* root)
     }
 }
 
-queue_t* createQueue()
-{
-    queue_t *queue = (queue_t*)malloc(sizeof(queue_t));
+queue_t *createQueue() {
+    queue_t *queue = (queue_t *)malloc(sizeof(queue_t));
+    if (queue == NULL) {
+        exit(EXIT_FAILURE);
+    }
     queue->front = queue->rear = NULL;
     return queue;
 }
 
-int is_empty(queue_t *queue)
+void enqueue(queue_t *queue, node_t *treeNode, int level) 
 {
-    if(queue->front == NULL){
-        return 1;
+    queue_node_t *newNode = (queue_node_t *)malloc(sizeof(queue_node_t));
+    if (newNode == NULL) {
+        exit(EXIT_FAILURE);
     }
-    return 0;
-}
+    newNode->avl_node = treeNode;
+    newNode->level = level;
+    newNode->next = NULL;
 
-queue_node_t* createQueueNode(node_t* treeNode)
-{
-    queue_node_t *node = (queue_node_t*)malloc(sizeof(queue_node_t));
-    node->avl_node = treeNode;
-    node->next = NULL;
-    return node;
-}
-
-void enqueue(queue_t* queue, node_t* treeNode)
-{
-    queue_node_t *new = createQueueNode(treeNode);
-
-    if(is_empty(queue) == 1){
-        queue->front = queue->rear = new;
+    if (queue->rear == NULL) {
+        queue->front = queue->rear = newNode;
         return;
     }
-    queue->rear->next = new;
-    queue->rear = new;
+
+    queue->rear->next = newNode;
+    queue->rear = newNode;
 }
+
+queue_node_t *dequeue(queue_t *queue) 
+{
+    if (is_empty(queue)) {
+        return NULL;
+    }
+
+    queue_node_t *temp = queue->front;
+    queue->front = temp->next;
+
+    if (queue->front == NULL) {
+        queue->rear = NULL;
+    }
+
+    return temp;
+}
+
+int is_empty(queue_t *queue) 
+{
+    return (queue->front == NULL);
+}
+
